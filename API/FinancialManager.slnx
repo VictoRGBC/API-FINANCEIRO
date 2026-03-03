@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/SRC/">
+    <Project Path="Domain/FinancialManager.Domain.csproj" Id="cebf4e9c-dfe0-49e3-847c-8563ea97ade2" />
+    <Project Path="FinancialManager.API/FinancialManager.API.csproj" Id="e9cbbd87-28b8-457b-9896-d55aebf3baf3" />
+    <Project Path="FinancialManager.Application/FinancialManager.Application.csproj" Id="18de2c39-0af1-4f99-8590-f25a9a9d9de8" />
+    <Project Path="FinancialManager.Infrastructure/FinancialManager.Infrastructure.csproj" Id="12a7c292-c61d-4dd7-aa92-7218424c9d05" />
+  </Folder>
+</Solution>

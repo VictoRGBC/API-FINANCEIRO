@@ -14,9 +14,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\galat\\Downloads\\Atividade Faculdade\\API-FINANCEIRO\\API\\Domain\\Domain.csproj",
-      "projectName": "Domain",
-      "projectPath": "C:\\Users\\galat\\Downloads\\Atividade Faculdade\\API-FINANCEIRO\\API\\Domain\\Domain.csproj",
+      "projectUniqueName": "C:\\Users\\galat\\Downloads\\Atividade Faculdade\\API-FINANCEIRO\\API\\Domain\\FinancialManager.Domain.csproj",
+      "projectName": "FinancialManager.Domain",
+      "projectPath": "C:\\Users\\galat\\Downloads\\Atividade Faculdade\\API-FINANCEIRO\\API\\Domain\\FinancialManager.Domain.csproj",
       "packagesPath": "C:\\Users\\galat\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\galat\\Downloads\\Atividade Faculdade\\API-FINANCEIRO\\API\\Domain\\obj\\",
       "projectStyle": "PackageReference",
