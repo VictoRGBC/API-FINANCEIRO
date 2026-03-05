@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Domain\FinancialManager.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\" />
+  </ItemGroup>
+
 </Project>
