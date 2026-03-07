@@ -1,4 +1,8 @@
-﻿public class FinancialManagerDbContext : DbContext
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace FinancialManager.Infrastructure.Persistence;
+
+public class FinancialManagerDbContext : DbContext
 {
     public FinancialManagerDbContext(DbContextOptions<FinancialManagerDbContext> options)
         : base(options) { }

@@ -1,4 +1,9 @@
-﻿public class TransactionRepository : ITransactionRepository
+﻿using FinancialManager.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace FinancialManager.Infrastructure.Persistence.Repositories;
+
+public class TransactionRepository : ITransactionRepository
 {
     private readonly FinancialManagerDbContext _context;
 
