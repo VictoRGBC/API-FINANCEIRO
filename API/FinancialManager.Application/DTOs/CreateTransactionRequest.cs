@@ -1,8 +1,10 @@
-﻿public record CreateTransactionRequest(
+﻿namespace FinancialManager.Application.DTOs;
+
+public record CreateTransactionRequest(
     string Description,
     decimal Amount,
     DateTime Date,
-    int Type, // 1 para Revenue, 2 para Expense
+    int Type,
     Guid AccountId,
     Guid CategoryId
 );

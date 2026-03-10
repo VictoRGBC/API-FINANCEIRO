@@ -1,3 +1,5 @@
+using FinancialManager.Domain.Entities;
+using FinancialManager.Domain.Interfaces;
 using FinancialManager.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,15 +24,20 @@ public class AccountRepository : IAccountRepository
         return await _context.Accounts.ToListAsync();
     }
 
+    public async Task<IEnumerable<Account>> GetByUserIdAsync(Guid userId)
+    {
+        return await _context.Accounts
+            .Where(a => a.UserId == userId)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(Account account)
     {
         await _context.Accounts.AddAsync(account);
-        await _context.SaveChangesAsync();
     }
 
     public void Update(Account account)
     {
         _context.Accounts.Update(account);
-        _context.SaveChanges();
     }
 }

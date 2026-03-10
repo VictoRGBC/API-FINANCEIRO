@@ -1,8 +1,13 @@
-// src/API/Program.cs
 using FinancialManager.API.HealthChecks;
 using FinancialManager.API.Middleware;
+using FinancialManager.Application.DTOs;
+using FinancialManager.Application.Services;
+using FinancialManager.Application.Validators;
+using FinancialManager.Domain.Interfaces;
+using FinancialManager.Domain.Services;
 using FinancialManager.Infrastructure.Persistence;
 using FinancialManager.Infrastructure.Persistence.Repositories;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
@@ -22,28 +27,49 @@ builder.Services.AddDbContext<FinancialManagerDbContext>(options =>
 // 2. Registrar Repositórios (Infrastructure)
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-// 3. Registrar Serviços (Application e Domain)
-builder.Services.AddScoped<TransferAppService>();
+// 3. Registrar Unit of Work
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// 4. Registrar Serviços (Application e Domain)
+builder.Services.AddScoped<AccountAppService>();
 builder.Services.AddScoped<TransactionService>();
-builder.Services.AddScoped<TransferService>(); 
+builder.Services.AddScoped<TransferAppService>();
+builder.Services.AddScoped<CategoryAppService>();
+builder.Services.AddScoped<TransferService>();
 
-// 4. Configurar CORS
+// 5. Configurar FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<CreateTransactionRequestValidator>();
+
+// 6. Configurar CORS
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "*" };
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("ApiPolicy", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (allowedOrigins.Contains("*"))
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
     });
 });
 
-// 5. Configurar Health Checks
+// 7. Configurar Health Checks
 builder.Services.AddHealthChecks()
-    .AddCheck<DatabaseHealthCheck>("database");
+    .AddCheck<DatabaseHealthCheck>("database")
+    .AddDbContextCheck<FinancialManagerDbContext>();
 
-// 6. Configurar Controllers e Swagger
+// 8. Configurar Controllers e Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
@@ -53,7 +79,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Financial Manager API",
         Version = "v1",
-        Description = "API para gerenciamento financeiro com suporte a transações e transferências",
+        Description = "API para gerenciamento financeiro com suporte a contas, transações, transferências e categorias",
         Contact = new OpenApiContact
         {
             Name = "Financial Manager Team",
@@ -64,10 +90,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 7. Middleware de Tratamento de Exceções Global
+// 9. Middleware de Tratamento de Exceções Global
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
-// 8. Configuração do Pipeline HTTP
+// 10. Configuração do Pipeline HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -77,7 +103,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Scalar - Interface moderna de documentação (disponível em todos os ambientes)
+// Scalar - Interface moderna de documentação
 app.MapOpenApi();
 app.MapScalarApiReference(options =>
 {
@@ -88,13 +114,13 @@ app.MapScalarApiReference(options =>
         .WithSidebar(true);
 });
 
-// 9. CORS
-app.UseCors("AllowAll");
+// 11. CORS
+app.UseCors("ApiPolicy");
 
-// 10. Health Checks Endpoint
+// 12. Health Checks Endpoint
 app.MapHealthChecks("/health");
 
-// 11. Controllers
+// 13. Controllers
 app.UseHttpsRedirection();
 app.MapControllers();
 

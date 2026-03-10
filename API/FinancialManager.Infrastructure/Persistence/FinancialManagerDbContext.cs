@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using FinancialManager.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinancialManager.Infrastructure.Persistence;
 
@@ -13,7 +14,6 @@ public class FinancialManagerDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Aplica todas as configurações que criaremos abaixo
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FinancialManagerDbContext).Assembly);
     }
 }

@@ -1,4 +1,9 @@
-﻿// src/Domain/Services/TransferService.cs
+﻿using FinancialManager.Domain.Entities;
+using FinancialManager.Domain.Enums;
+using FinancialManager.Domain.Exceptions;
+
+namespace FinancialManager.Domain.Services;
+
 public class TransferService
 {
     public (Transaction Debit, Transaction Credit) CreateTransfer(
@@ -8,13 +13,15 @@ public class TransferService
         string description,
         Guid categoryId)
     {
-        if (amount <= 0) throw new ArgumentException("O valor deve ser positivo.");
+        if (amount <= 0)
+            throw new ValidationException("O valor da transferência deve ser positivo.");
+
         if (sourceAccount.Id == destinationAccount.Id)
-            throw new InvalidOperationException("Contas de origem e destino devem ser diferentes.");
+            throw new BusinessRuleException("As contas de origem e destino devem ser diferentes.");
 
         var debit = new Transaction(
             $"Transferência para {destinationAccount.Name}: {description}",
-            amount, DateTime.UtcNow, TransactionType.Expense, sourceAccount.Id, categoryId);
+            -amount, DateTime.UtcNow, TransactionType.Expense, sourceAccount.Id, categoryId);
 
         var credit = new Transaction(
             $"Transferência de {sourceAccount.Name}: {description}",

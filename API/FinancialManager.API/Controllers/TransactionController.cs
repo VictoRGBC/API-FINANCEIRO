@@ -1,3 +1,5 @@
+using FinancialManager.Application.DTOs;
+using FinancialManager.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinancialManager.API.Controllers;
@@ -17,9 +19,13 @@ public class TransactionController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Cria uma nova transação (receita ou despesa)
+    /// </summary>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Create([FromBody] CreateTransactionRequest request)
     {
         _logger.LogInformation("Criando transação para conta {AccountId}", request.AccountId);

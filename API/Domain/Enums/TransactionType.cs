@@ -1,5 +1,7 @@
-﻿public enum TransactionType
+﻿namespace FinancialManager.Domain.Enums;
+
+public enum TransactionType
 {
-    Revenue = 1, // Receita
-    Expense = 2  // Despesa
+    Revenue = 1,
+    Expense = 2
 }

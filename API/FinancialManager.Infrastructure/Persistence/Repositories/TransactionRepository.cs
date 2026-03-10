@@ -1,4 +1,6 @@
-﻿using FinancialManager.Infrastructure.Persistence;
+﻿using FinancialManager.Domain.Entities;
+using FinancialManager.Domain.Interfaces;
+using FinancialManager.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinancialManager.Infrastructure.Persistence.Repositories;
@@ -15,7 +17,6 @@ public class TransactionRepository : ITransactionRepository
     public async Task AddRangeAsync(IEnumerable<Transaction> transactions)
     {
         await _context.Transactions.AddRangeAsync(transactions);
-        await _context.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<Transaction>> GetByAccountIdAsync(Guid accountId)

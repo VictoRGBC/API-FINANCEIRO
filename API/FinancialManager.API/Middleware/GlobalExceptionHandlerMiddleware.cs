@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using FinancialManager.Domain.Exceptions;
 
 namespace FinancialManager.API.Middleware;
 
@@ -31,30 +32,78 @@ public class GlobalExceptionHandlerMiddleware
 
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var statusCode = exception switch
-        {
-            ArgumentException => HttpStatusCode.BadRequest,
-            KeyNotFoundException => HttpStatusCode.NotFound,
-            UnauthorizedAccessException => HttpStatusCode.Unauthorized,
-            InvalidOperationException => HttpStatusCode.BadRequest,
-            _ => HttpStatusCode.InternalServerError
-        };
+        HttpStatusCode statusCode;
+        object response;
 
-        var response = new
+        switch (exception)
         {
-            error = exception.Message,
+            case NotFoundException notFound:
+                statusCode = HttpStatusCode.NotFound;
+                response = new { error = notFound.Message, type = "NotFound" };
+                break;
+
+            case ValidationException validation:
+                statusCode = HttpStatusCode.BadRequest;
+                response = new { error = validation.Message, errors = validation.Errors, type = "Validation" };
+                break;
+
+            case InsufficientBalanceException insufficient:
+                statusCode = HttpStatusCode.BadRequest;
+                response = new
+                {
+                    error = insufficient.Message,
+                    currentBalance = insufficient.CurrentBalance,
+                    requiredAmount = insufficient.RequiredAmount,
+                    type = "InsufficientBalance"
+                };
+                break;
+
+            case BusinessRuleException businessRule:
+                statusCode = HttpStatusCode.BadRequest;
+                response = new { error = businessRule.Message, type = "BusinessRule" };
+                break;
+
+            case UnauthorizedAccessException:
+                statusCode = HttpStatusCode.Unauthorized;
+                response = new { error = "Acesso não autorizado.", type = "Unauthorized" };
+                break;
+
+            default:
+                statusCode = HttpStatusCode.InternalServerError;
+                response = new { error = "Ocorreu um erro interno no servidor.", type = "InternalError" };
+                break;
+        }
+
+        var finalResponse = new
+        {
+            error = GetErrorMessage(response),
             statusCode = (int)statusCode,
-            timestamp = DateTime.UtcNow
+            timestamp = DateTime.UtcNow,
+            type = GetErrorType(response)
         };
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
+        var jsonResponse = JsonSerializer.Serialize(finalResponse, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
 
         return context.Response.WriteAsync(jsonResponse);
+    }
+
+    private static string GetErrorMessage(object response)
+    {
+        var type = response.GetType();
+        var prop = type.GetProperty("error");
+        return prop?.GetValue(response)?.ToString() ?? "Erro desconhecido";
+    }
+
+    private static string GetErrorType(object response)
+    {
+        var type = response.GetType();
+        var prop = type.GetProperty("type");
+        return prop?.GetValue(response)?.ToString() ?? "Unknown";
     }
 }

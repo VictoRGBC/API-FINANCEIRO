@@ -1,24 +1,36 @@
-﻿public class TransactionService
-{
-    private readonly ITransactionRepository _transactionRepository;
-    private readonly IAccountRepository _accountRepository;
+﻿using FinancialManager.Application.DTOs;
+using FinancialManager.Domain.Entities;
+using FinancialManager.Domain.Enums;
+using FinancialManager.Domain.Exceptions;
+using FinancialManager.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
-    // Injeção de Dependência via Construtor
+namespace FinancialManager.Application.Services;
+
+public class TransactionService
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<TransactionService> _logger;
+
     public TransactionService(
-        ITransactionRepository transactionRepository,
-        IAccountRepository accountRepository)
+        IUnitOfWork unitOfWork,
+        ILogger<TransactionService> logger)
     {
-        _transactionRepository = transactionRepository;
-        _accountRepository = accountRepository;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task ExecuteAsync(CreateTransactionRequest request)
     {
-        // 1. Validar se a conta existe
-        var account = await _accountRepository.GetByIdAsync(request.AccountId);
-        if (account == null) throw new Exception("Conta não encontrada.");
+        _logger.LogInformation("Iniciando criação de transação para conta {AccountId}", request.AccountId);
 
-        // 2. Criar a entidade de domínio
+        var account = await _unitOfWork.AccountRepository.GetByIdAsync(request.AccountId);
+        if (account == null)
+        {
+            _logger.LogWarning("Conta {AccountId} não encontrada", request.AccountId);
+            throw new NotFoundException("Conta", request.AccountId);
+        }
+
         var transaction = new Transaction(
             request.Description,
             request.Amount,
@@ -28,7 +40,9 @@
             request.CategoryId
         );
 
-        // 3. Persistir
-        await _transactionRepository.AddRangeAsync(new[] { transaction });
+        await _unitOfWork.TransactionRepository.AddRangeAsync(new[] { transaction });
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Transação criada com sucesso. ID: {TransactionId}", transaction.Id);
     }
 }
