@@ -63,6 +63,11 @@ public class GlobalExceptionHandlerMiddleware
                 response = new { error = businessRule.Message, type = "BusinessRule" };
                 break;
 
+            case UnauthorizedException unauthorized:
+                statusCode = HttpStatusCode.Unauthorized;
+                response = new { error = unauthorized.Message, type = "Unauthorized" };
+                break;
+
             case UnauthorizedAccessException:
                 statusCode = HttpStatusCode.Unauthorized;
                 response = new { error = "Acesso não autorizado.", type = "Unauthorized" };

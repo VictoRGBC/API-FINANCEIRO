@@ -1,11 +1,13 @@
 using FinancialManager.Application.DTOs;
 using FinancialManager.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinancialManager.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TransactionController : ControllerBase
 {
     private readonly TransactionService _transactionService;

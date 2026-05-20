@@ -8,6 +8,9 @@ public class Account : Entity
     public string Type { get; private set; }
     public Guid UserId { get; private set; }
 
+    // Navigation properties
+    public User User { get; private set; }
+
     private readonly List<Transaction> _transactions = new();
     public IReadOnlyCollection<Transaction> Transactions => _transactions.AsReadOnly();
 

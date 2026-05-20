@@ -1,6 +1,8 @@
 using FinancialManager.API.HealthChecks;
 using FinancialManager.API.Middleware;
+using FinancialManager.API.Services;
 using FinancialManager.Application.DTOs;
+using FinancialManager.Application.Interfaces;
 using FinancialManager.Application.Services;
 using FinancialManager.Application.Validators;
 using FinancialManager.Domain.Interfaces;
@@ -8,9 +10,12 @@ using FinancialManager.Domain.Services;
 using FinancialManager.Infrastructure.Persistence;
 using FinancialManager.Infrastructure.Persistence.Repositories;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +33,7 @@ builder.Services.AddDbContext<FinancialManagerDbContext>(options =>
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // 3. Registrar Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -38,9 +44,36 @@ builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<TransferAppService>();
 builder.Services.AddScoped<CategoryAppService>();
 builder.Services.AddScoped<TransferService>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserProfileService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 // 5. Configurar FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateTransactionRequestValidator>();
+
+// 5.1. Configurar Autenticação JWT
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey não foi configurada.");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
 
 // 6. Configurar CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "*" };
@@ -86,6 +119,31 @@ builder.Services.AddSwaggerGen(c =>
             Url = new Uri("https://github.com/VictoRGBC/API-FINANCEIRO")
         }
     });
+
+    // Configuração de segurança JWT no Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 var app = builder.Build();
@@ -116,6 +174,10 @@ app.MapScalarApiReference(options =>
 
 // 11. CORS
 app.UseCors("ApiPolicy");
+
+// 11.1. Autenticação e Autorização
+app.UseAuthentication();
+app.UseAuthorization();
 
 // 12. Health Checks Endpoint
 app.MapHealthChecks("/health");
